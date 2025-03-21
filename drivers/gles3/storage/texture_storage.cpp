@@ -2749,7 +2749,7 @@ void TextureStorage::render_target_set_depth_per_component(RID p_render_target, 
 RS::ViewportDepthPerComponent TextureStorage::render_target_get_depth_per_component(RID p_render_target) const {
 	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT);
-	
+
 	return rt->depth_per_component;
 }
 

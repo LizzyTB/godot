@@ -3490,14 +3490,14 @@ PackedStringArray Viewport::get_configuration_warnings() const {
 	TypedArray<Node> children = get_children(false);
 
 	for (Variant child : children) {
-		if (Camera3D* camera = Object::cast_to<Camera3D>(child)) {
+		if (Camera3D *camera = Object::cast_to<Camera3D>(child)) {
 			Ref<Environment> environment = camera->environment;
 
 			if (environment.is_valid()) {
 				if (environment->get_tonemapper() != Environment::TONE_MAPPER_LINEAR) {
 					warnings.push_back(RTR("Child Camera3D's environment cannot have a tone mapper."));
 				}
-				
+
 				if (environment->is_ssr_enabled()) {
 					warnings.push_back(RTR("Child Camera3D's environment cannot have SSR enabled."));
 				}
@@ -3529,8 +3529,7 @@ PackedStringArray Viewport::get_configuration_warnings() const {
 				if (environment->is_adjustment_enabled()) {
 					warnings.push_back(RTR("Child Camera3D's environment cannot have Adjustment enabled."));
 				}
-			}
-			else {
+			} else {
 				warnings.push_back(RTR("Child Camera3D's should have it's own environment to prevent forcing Depth per Component to 8-bit/16-bit."));
 			}
 		}

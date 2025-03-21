@@ -945,7 +945,7 @@ RD::DataFormat RendererSceneRenderRD::_render_buffers_get_color_format(RS::Viewp
 			return RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
 
 		default:
-		return RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+			return RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
 	}
 }
 

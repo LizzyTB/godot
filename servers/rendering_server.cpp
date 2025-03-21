@@ -2853,7 +2853,7 @@ void RenderingServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(RenderingServer::VIEWPORT_DEPTH_PER_COMPONENT_32BIT);
 
 	ClassDB::bind_method(D_METHOD("viewport_set_depth_per_component", "viewport", "depth_per_component"), &RenderingServer::viewport_set_depth_per_component);
-	
+
 	ClassDB::bind_method(D_METHOD("viewport_set_screen_space_aa", "viewport", "mode"), &RenderingServer::viewport_set_screen_space_aa);
 	ClassDB::bind_method(D_METHOD("viewport_set_use_taa", "viewport", "enable"), &RenderingServer::viewport_set_use_taa);
 	ClassDB::bind_method(D_METHOD("viewport_set_use_debanding", "viewport", "enable"), &RenderingServer::viewport_set_use_debanding);
