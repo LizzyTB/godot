@@ -767,7 +767,7 @@ void RendererSceneRenderRD::_post_process_subpass(RID p_source_texture, RID p_fr
 	tonemap.luminance_multiplier = _render_buffers_get_luminance_multiplier();
 	tonemap.view_count = rb->get_view_count();
 
-	tonemap.convert_to_srgb = !texture_storage->render_target_get_depth_per_component(rb->get_render_target()) != RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT;
+	tonemap.convert_to_srgb = texture_storage->render_target_get_depth_per_component(rb->get_render_target()) == RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT;
 
 	tone_mapper->tonemapper(draw_list, p_source_texture, RD::get_singleton()->framebuffer_get_format(p_framebuffer), tonemap);
 
