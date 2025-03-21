@@ -2877,7 +2877,8 @@ void Node3DEditorViewport::_project_settings_changed() {
 	viewport->set_transparent_background(transparent_background);
 
 	const bool use_hdr_2d = GLOBAL_GET("rendering/viewport/hdr_2d");
-	viewport->set_use_hdr_2d(use_hdr_2d);
+	const Viewport::DepthPerComponent depth_per_component = use_hdr_2d ? Viewport::DEPTH_PER_COMPONENT_16BIT : Viewport::DEPTH_PER_COMPONENT_8BIT;
+	viewport->set_depth_per_component(depth_per_component);
 
 	const bool use_debanding = GLOBAL_GET("rendering/anti_aliasing/quality/use_debanding");
 	viewport->set_use_debanding(use_debanding);

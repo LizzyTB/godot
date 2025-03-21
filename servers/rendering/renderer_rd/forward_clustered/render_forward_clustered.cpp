@@ -1617,7 +1617,7 @@ void RenderForwardClustered::_process_ssr(Ref<RenderSceneBuffersRD> p_render_buf
 	ERR_FAIL_COND(p_environment.is_null());
 	ERR_FAIL_COND(!environment_get_ssr_enabled(p_environment));
 
-	ss_effects->ssr_allocate_buffers(p_render_buffers, rb_data->ss_effects_data.ssr, _render_buffers_get_color_format());
+	ss_effects->ssr_allocate_buffers(p_render_buffers, rb_data->ss_effects_data.ssr, _render_buffers_get_color_format(RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT));
 	ss_effects->screen_space_reflection(p_render_buffers, rb_data->ss_effects_data.ssr, p_normal_slices, p_metallic_slices, environment_get_ssr_max_steps(p_environment), environment_get_ssr_fade_in(p_environment), environment_get_ssr_fade_out(p_environment), environment_get_ssr_depth_tolerance(p_environment), p_projections, p_eye_offsets);
 
 	RID output = p_render_buffers->get_texture(RB_SCOPE_SSR, RB_OUTPUT);
@@ -1977,7 +1977,7 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 			case RS::ENV_BG_CANVAS: {
 				if (!is_reflection_probe) {
 					RID texture = RendererRD::TextureStorage::get_singleton()->render_target_get_rd_texture(rb->get_render_target());
-					bool convert_to_linear = !RendererRD::TextureStorage::get_singleton()->render_target_is_using_hdr(rb->get_render_target());
+					bool convert_to_linear = RendererRD::TextureStorage::get_singleton()->render_target_get_depth_per_component(rb->get_render_target()) == RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT;
 					copy_effects->copy_to_fb_rect(texture, color_only_framebuffer, Rect2i(), false, false, false, false, RID(), false, false, convert_to_linear);
 				}
 				load_color = true;
@@ -2460,7 +2460,7 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 		} else if (using_taa) {
 			RD::get_singleton()->draw_command_begin_label("TAA");
 			RENDER_TIMESTAMP("TAA");
-			taa->process(rb, _render_buffers_get_color_format(), p_render_data->scene_data->z_near, p_render_data->scene_data->z_far);
+			taa->process(rb, _render_buffers_get_color_format(RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT), p_render_data->scene_data->z_near, p_render_data->scene_data->z_far);
 			RD::get_singleton()->draw_command_end_label();
 		}
 	}
@@ -4428,7 +4428,7 @@ void RenderForwardClustered::_mesh_compile_pipelines_for_surface(const SurfacePi
 
 	// Retrieve from the scene shader which groups are currently enabled.
 	const bool multiview_enabled = p_global.use_multiview && scene_shader.is_multiview_shader_group_enabled();
-	const RD::DataFormat buffers_color_format = _render_buffers_get_color_format();
+	const RD::DataFormat buffers_color_format = _render_buffers_get_color_format(RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT);
 	const bool buffers_can_be_storage = _render_buffers_can_be_storage();
 
 	// Set the attributes common to all pipelines.

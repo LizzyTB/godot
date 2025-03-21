@@ -667,7 +667,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, Item *p
 		RD::get_singleton()->buffer_update(state.lights_uniform_buffer, 0, sizeof(LightUniform) * light_count, &state.light_uniforms[0]);
 	}
 
-	bool use_linear_colors = texture_storage->render_target_is_using_hdr(p_to_render_target);
+	bool use_linear_colors = texture_storage->render_target_get_depth_per_component(p_to_render_target) != RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT;
 
 	{
 		//update canvas state uniform buffer
@@ -2274,7 +2274,7 @@ void RendererCanvasRenderRD::_render_batch_items(RenderTarget p_to_render_target
 			if (material_data->shader_data->version.is_valid() && material_data->shader_data->is_valid()) {
 				shader_data = material_data->shader_data;
 				// Update uniform set.
-				RID uniform_set = texture_storage->render_target_is_using_hdr(p_to_render_target.render_target) ? material_data->uniform_set : material_data->uniform_set_srgb;
+				RID uniform_set = texture_storage->render_target_get_depth_per_component(p_to_render_target.render_target) != RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT ? material_data->uniform_set : material_data->uniform_set_srgb;
 				if (uniform_set.is_valid() && RD::get_singleton()->uniform_set_is_valid(uniform_set)) { // Material may not have a uniform set.
 					RD::get_singleton()->draw_list_bind_uniform_set(draw_list, uniform_set, MATERIAL_UNIFORM_SET);
 					material_data->set_as_used();

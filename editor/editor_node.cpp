@@ -473,8 +473,9 @@ void EditorNode::_update_from_settings() {
 	scene_root->set_msaa_2d(msaa);
 
 	bool use_hdr_2d = GLOBAL_GET("rendering/viewport/hdr_2d");
-	scene_root->set_use_hdr_2d(use_hdr_2d);
-	get_viewport()->set_use_hdr_2d(use_hdr_2d);
+	Viewport::DepthPerComponent depth_per_component = use_hdr_2d ? Viewport::DEPTH_PER_COMPONENT_16BIT : Viewport::DEPTH_PER_COMPONENT_8BIT;
+	scene_root->set_depth_per_component(depth_per_component);
+	get_viewport()->set_depth_per_component(depth_per_component);
 
 	float mesh_lod_threshold = GLOBAL_GET("rendering/mesh_lod/lod_change/threshold_pixels");
 	scene_root->set_mesh_lod_threshold(mesh_lod_threshold);

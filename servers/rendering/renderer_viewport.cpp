@@ -354,7 +354,7 @@ void RendererViewport::_draw_viewport(Viewport *p_viewport) {
 
 	if ((scenario_draw_canvas_bg || can_draw_3d) && !p_viewport->render_buffers.is_valid()) {
 		//wants to draw 3D but there is no render buffer, create
-		p_viewport->render_buffers = RSG::scene->render_buffers_create();
+		p_viewport->render_buffers = RSG::scene->render_buffers_create(p_viewport->depth_per_component);
 
 		_configure_3d_render_buffers(p_viewport);
 	}
@@ -1342,22 +1342,22 @@ void RendererViewport::viewport_set_msaa_3d(RID p_viewport, RS::ViewportMSAA p_m
 	_configure_3d_render_buffers(viewport);
 }
 
-void RendererViewport::viewport_set_use_hdr_2d(RID p_viewport, bool p_use_hdr_2d) {
+void RendererViewport::viewport_set_depth_per_component(RID p_viewport, RS::ViewportDepthPerComponent p_depth_per_component) {
 	Viewport *viewport = viewport_owner.get_or_null(p_viewport);
 	ERR_FAIL_NULL(viewport);
 
-	if (viewport->use_hdr_2d == p_use_hdr_2d) {
+	if (viewport->depth_per_component == p_depth_per_component) {
 		return;
 	}
-	viewport->use_hdr_2d = p_use_hdr_2d;
-	RSG::texture_storage->render_target_set_use_hdr(viewport->render_target, p_use_hdr_2d);
+	viewport->depth_per_component = p_depth_per_component;
+	RSG::texture_storage->render_target_set_depth_per_component(viewport->render_target, p_depth_per_component);
 }
 
-bool RendererViewport::viewport_is_using_hdr_2d(RID p_viewport) const {
+RS::ViewportDepthPerComponent RendererViewport::viewport_get_depth_per_component(RID p_viewport) const {
 	Viewport *viewport = viewport_owner.get_or_null(p_viewport);
-	ERR_FAIL_NULL_V(viewport, false);
+	ERR_FAIL_NULL_V(viewport, RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT);
 
-	return viewport->use_hdr_2d;
+	return viewport->depth_per_component;
 }
 
 void RendererViewport::viewport_set_screen_space_aa(RID p_viewport, RS::ViewportScreenSpaceAA p_mode) {

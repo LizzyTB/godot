@@ -1402,7 +1402,7 @@ public:
 
 	/* Render Buffers */
 
-	PASS0R(Ref<RenderSceneBuffers>, render_buffers_create)
+	PASS1R(Ref<RenderSceneBuffers>, render_buffers_create, RS::ViewportDepthPerComponent)
 	PASS1(gi_set_use_half_resolution, bool)
 
 	/* Misc */

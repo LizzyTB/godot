@@ -158,7 +158,7 @@ public:
 	void set_time(double p_time, double p_step) override {}
 	void set_debug_draw_mode(RS::ViewportDebugDraw p_debug_draw) override {}
 
-	Ref<RenderSceneBuffers> render_buffers_create() override { return Ref<RenderSceneBuffers>(); }
+	Ref<RenderSceneBuffers> render_buffers_create(RS::ViewportDepthPerComponent p_depth_per_component) override { return Ref<RenderSceneBuffers>(); }
 	void gi_set_use_half_resolution(bool p_enable) override {}
 
 	void screen_space_roughness_limiter_set_active(bool p_enable, float p_amount, float p_curve) override {}

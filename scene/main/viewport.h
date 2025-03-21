@@ -139,6 +139,12 @@ public:
 		SCREEN_SPACE_AA_MAX
 	};
 
+	enum DepthPerComponent {
+		DEPTH_PER_COMPONENT_8BIT,
+		DEPTH_PER_COMPONENT_16BIT,
+		DEPTH_PER_COMPONENT_32BIT
+	};
+
 	enum RenderInfo {
 		RENDER_INFO_OBJECTS_IN_FRAME,
 		RENDER_INFO_PRIMITIVES_IN_FRAME,
@@ -261,7 +267,7 @@ private:
 	Rect2 last_vp_rect;
 
 	bool transparent_bg = false;
-	bool use_hdr_2d = false;
+	DepthPerComponent depth_per_component = DEPTH_PER_COMPONENT_8BIT;
 	bool gen_mipmaps = false;
 
 	bool snap_controls_to_pixels = true;
@@ -537,8 +543,8 @@ public:
 	void set_transparent_background(bool p_enable);
 	bool has_transparent_background() const;
 
-	void set_use_hdr_2d(bool p_enable);
-	bool is_using_hdr_2d() const;
+	void set_depth_per_component(DepthPerComponent p_depth_per_component);
+	DepthPerComponent get_depth_per_component() const;
 
 	Ref<ViewportTexture> get_texture() const;
 
@@ -875,6 +881,7 @@ public:
 	virtual bool is_sub_viewport() const override { return true; }
 
 	void _validate_property(PropertyInfo &p_property) const;
+
 	SubViewport();
 	~SubViewport();
 };
@@ -884,6 +891,7 @@ VARIANT_ENUM_CAST(Viewport::PositionalShadowAtlasQuadrantSubdiv);
 VARIANT_ENUM_CAST(Viewport::MSAA);
 VARIANT_ENUM_CAST(Viewport::AnisotropicFiltering);
 VARIANT_ENUM_CAST(Viewport::ScreenSpaceAA);
+VARIANT_ENUM_CAST(Viewport::DepthPerComponent);
 VARIANT_ENUM_CAST(Viewport::DebugDraw);
 VARIANT_ENUM_CAST(Viewport::SDFScale);
 VARIANT_ENUM_CAST(Viewport::SDFOversize);

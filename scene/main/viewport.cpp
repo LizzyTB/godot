@@ -1197,15 +1197,38 @@ bool Viewport::has_transparent_background() const {
 	return transparent_bg;
 }
 
-void Viewport::set_use_hdr_2d(bool p_enable) {
+void Viewport::set_depth_per_component(DepthPerComponent p_depth_per_component) {
 	ERR_MAIN_THREAD_GUARD;
-	use_hdr_2d = p_enable;
-	RS::get_singleton()->viewport_set_use_hdr_2d(viewport, p_enable);
+	depth_per_component = p_depth_per_component;
+
+	RS::ViewportDepthPerComponent viewport_depth_per_component;
+
+	switch (p_depth_per_component) {
+		case DEPTH_PER_COMPONENT_8BIT:
+			viewport_depth_per_component = RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT;
+			break;
+
+		case DEPTH_PER_COMPONENT_16BIT:
+			viewport_depth_per_component = RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT;
+			break;
+
+		case DEPTH_PER_COMPONENT_32BIT:
+			viewport_depth_per_component = RS::VIEWPORT_DEPTH_PER_COMPONENT_32BIT;
+			break;
+
+		default:
+			ERR_FAIL_MSG("Invalid depth per component, defaulting to 8 bits per component");
+			depth_per_component = DEPTH_PER_COMPONENT_8BIT;
+			viewport_depth_per_component = RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT;
+			break;
+	}
+
+	RS::get_singleton()->viewport_set_depth_per_component(viewport, viewport_depth_per_component);
 }
 
-bool Viewport::is_using_hdr_2d() const {
-	ERR_READ_THREAD_GUARD_V(false);
-	return use_hdr_2d;
+Viewport::DepthPerComponent Viewport::get_depth_per_component() const {
+	ERR_MAIN_THREAD_GUARD_V(Viewport::DEPTH_PER_COMPONENT_8BIT);
+	return depth_per_component;
 }
 
 void Viewport::set_world_2d(const Ref<World2D> &p_world_2d) {
@@ -3463,6 +3486,56 @@ PackedStringArray Viewport::get_configuration_warnings() const {
 	if (size.x <= 1 || size.y <= 1) {
 		warnings.push_back(RTR("The Viewport size must be greater than or equal to 2 pixels on both dimensions to render anything."));
 	}
+
+	TypedArray<Node> children = get_children(false);
+
+	for (Variant child : children) {
+		if (Camera3D* camera = Object::cast_to<Camera3D>(child)) {
+			Ref<Environment> environment = camera->environment;
+
+			if (environment.is_valid()) {
+				if (environment->get_tonemapper() != Environment::TONE_MAPPER_LINEAR) {
+					warnings.push_back(RTR("Child Camera3D's environment cannot have a tone mapper."));
+				}
+				
+				if (environment->is_ssr_enabled()) {
+					warnings.push_back(RTR("Child Camera3D's environment cannot have SSR enabled."));
+				}
+
+				if (environment->is_ssao_enabled()) {
+					warnings.push_back(RTR("Child Camera3D's environment cannot have SSAO enabled."));
+				}
+
+				if (environment->is_ssil_enabled()) {
+					warnings.push_back(RTR("Child Camera3D's environment cannot have SSIL enabled."));
+				}
+
+				if (environment->is_sdfgi_enabled()) {
+					warnings.push_back(RTR("Child Camera3D's environment cannot have SDFGI enabled."));
+				}
+
+				if (environment->is_glow_enabled()) {
+					warnings.push_back(RTR("Child Camera3D's environment cannot have Glow enabled."));
+				}
+
+				if (environment->is_fog_enabled()) {
+					warnings.push_back(RTR("Child Camera3D's environment cannot have Fog enabled."));
+				}
+
+				if (environment->is_volumetric_fog_enabled()) {
+					warnings.push_back(RTR("Child Camera3D's environment cannot have Volumetric Fog enabled."));
+				}
+
+				if (environment->is_adjustment_enabled()) {
+					warnings.push_back(RTR("Child Camera3D's environment cannot have Adjustment enabled."));
+				}
+			}
+			else {
+				warnings.push_back(RTR("Child Camera3D's should have it's own environment to prevent forcing Depth per Component to 8-bit/16-bit."));
+			}
+		}
+	}
+
 	return warnings;
 }
 
@@ -4779,8 +4852,9 @@ void Viewport::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_visible_rect"), &Viewport::get_visible_rect);
 	ClassDB::bind_method(D_METHOD("set_transparent_background", "enable"), &Viewport::set_transparent_background);
 	ClassDB::bind_method(D_METHOD("has_transparent_background"), &Viewport::has_transparent_background);
-	ClassDB::bind_method(D_METHOD("set_use_hdr_2d", "enable"), &Viewport::set_use_hdr_2d);
-	ClassDB::bind_method(D_METHOD("is_using_hdr_2d"), &Viewport::is_using_hdr_2d);
+
+	ClassDB::bind_method(D_METHOD("set_depth_per_component", "depth_per_component"), &Viewport::set_depth_per_component);
+	ClassDB::bind_method(D_METHOD("get_depth_per_component"), &Viewport::get_depth_per_component);
 
 	ClassDB::bind_method(D_METHOD("set_msaa_2d", "msaa"), &Viewport::set_msaa_2d);
 	ClassDB::bind_method(D_METHOD("get_msaa_2d"), &Viewport::get_msaa_2d);
@@ -4959,7 +5033,7 @@ void Viewport::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_occlusion_culling"), "set_use_occlusion_culling", "is_using_occlusion_culling");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mesh_lod_threshold", PROPERTY_HINT_RANGE, "0,1024,0.1"), "set_mesh_lod_threshold", "get_mesh_lod_threshold");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "debug_draw", PROPERTY_HINT_ENUM, "Disabled,Unshaded,Lighting,Overdraw,Wireframe,Normal Buffer,VoxelGI Albedo,VoxelGI Lighting,VoxelGI Emission,Shadow Atlas,Directional Shadow Map,Scene Luminance,SSAO,SSIL,Directional Shadow Splits,Decal Atlas,SDFGI Cascades,SDFGI Probes,VoxelGI/SDFGI Buffer,Disable Mesh LOD,OmniLight3D Cluster,SpotLight3D Cluster,Decal Cluster,ReflectionProbe Cluster,Occlusion Culling Buffer,Motion Vectors,Internal Buffer"), "set_debug_draw", "get_debug_draw");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_hdr_2d"), "set_use_hdr_2d", "is_using_hdr_2d");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "depth_per_component", PROPERTY_HINT_ENUM, String::utf8("8-bit (LDR), 16-bit (HDR), 32-bit (Advanced Shaders Only)")), "set_depth_per_component", "get_depth_per_component");
 
 #ifndef _3D_DISABLED
 	ADD_GROUP("Scaling 3D", "");
@@ -5038,6 +5112,10 @@ void Viewport::_bind_methods() {
 	BIND_ENUM_CONSTANT(SCREEN_SPACE_AA_DISABLED);
 	BIND_ENUM_CONSTANT(SCREEN_SPACE_AA_FXAA);
 	BIND_ENUM_CONSTANT(SCREEN_SPACE_AA_MAX);
+
+	BIND_ENUM_CONSTANT(DEPTH_PER_COMPONENT_8BIT);
+	BIND_ENUM_CONSTANT(DEPTH_PER_COMPONENT_16BIT);
+	BIND_ENUM_CONSTANT(DEPTH_PER_COMPONENT_32BIT);
 
 	BIND_ENUM_CONSTANT(RENDER_INFO_OBJECTS_IN_FRAME);
 	BIND_ENUM_CONSTANT(RENDER_INFO_PRIMITIVES_IN_FRAME);

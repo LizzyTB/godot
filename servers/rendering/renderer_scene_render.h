@@ -324,7 +324,7 @@ public:
 	virtual void set_time(double p_time, double p_step) = 0;
 	virtual void set_debug_draw_mode(RS::ViewportDebugDraw p_debug_draw) = 0;
 
-	virtual Ref<RenderSceneBuffers> render_buffers_create() = 0;
+	virtual Ref<RenderSceneBuffers> render_buffers_create(RS::ViewportDepthPerComponent p_depth_per_component) = 0;
 	virtual void gi_set_use_half_resolution(bool p_enable) = 0;
 
 	virtual void screen_space_roughness_limiter_set_active(bool p_enable, float p_amount, float p_limit) = 0;

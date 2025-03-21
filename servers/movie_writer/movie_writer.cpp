@@ -186,7 +186,7 @@ void MovieWriter::add_frame() {
 	RID main_vp_rid = RenderingServer::get_singleton()->viewport_find_from_screen_attachment(DisplayServer::MAIN_WINDOW_ID);
 	RID main_vp_texture = RenderingServer::get_singleton()->viewport_get_texture(main_vp_rid);
 	Ref<Image> vp_tex = RenderingServer::get_singleton()->texture_2d_get(main_vp_texture);
-	if (RenderingServer::get_singleton()->viewport_is_using_hdr_2d(main_vp_rid)) {
+	if (RenderingServer::get_singleton()->viewport_get_depth_per_component(main_vp_rid) != RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT) {
 		vp_tex->convert(Image::FORMAT_RGBA8);
 		vp_tex->linear_to_srgb();
 	}

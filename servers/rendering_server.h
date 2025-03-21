@@ -1011,8 +1011,16 @@ public:
 	virtual void viewport_remove_canvas(RID p_viewport, RID p_canvas) = 0;
 	virtual void viewport_set_canvas_transform(RID p_viewport, RID p_canvas, const Transform2D &p_offset) = 0;
 	virtual void viewport_set_transparent_background(RID p_viewport, bool p_enabled) = 0;
-	virtual void viewport_set_use_hdr_2d(RID p_viewport, bool p_use_hdr) = 0;
-	virtual bool viewport_is_using_hdr_2d(RID p_viewport) const = 0;
+
+	enum ViewportDepthPerComponent {
+		VIEWPORT_DEPTH_PER_COMPONENT_8BIT,
+		VIEWPORT_DEPTH_PER_COMPONENT_16BIT,
+		VIEWPORT_DEPTH_PER_COMPONENT_32BIT
+	};
+
+	virtual void viewport_set_depth_per_component(RID p_viewport, ViewportDepthPerComponent p_depth_per_component) = 0;
+	virtual ViewportDepthPerComponent viewport_get_depth_per_component(RID p_viewport) const = 0;
+
 	virtual void viewport_set_snap_2d_transforms_to_pixel(RID p_viewport, bool p_enabled) = 0;
 	virtual void viewport_set_snap_2d_vertices_to_pixel(RID p_viewport, bool p_enabled) = 0;
 
@@ -1919,6 +1927,7 @@ VARIANT_ENUM_CAST(RenderingServer::ParticlesEmitFlags);
 VARIANT_ENUM_CAST(RenderingServer::ParticlesCollisionType);
 VARIANT_ENUM_CAST(RenderingServer::ParticlesCollisionHeightfieldResolution);
 VARIANT_ENUM_CAST(RenderingServer::FogVolumeShape);
+VARIANT_ENUM_CAST(RenderingServer::ViewportDepthPerComponent);
 VARIANT_ENUM_CAST(RenderingServer::ViewportScaling3DMode);
 VARIANT_ENUM_CAST(RenderingServer::ViewportUpdateMode);
 VARIANT_ENUM_CAST(RenderingServer::ViewportClearMode);

@@ -3819,7 +3819,7 @@ void RasterizerSceneGLES3::set_debug_draw_mode(RS::ViewportDebugDraw p_debug_dra
 	debug_draw = p_debug_draw;
 }
 
-Ref<RenderSceneBuffers> RasterizerSceneGLES3::render_buffers_create() {
+Ref<RenderSceneBuffers> RasterizerSceneGLES3::render_buffers_create(RS::ViewportDepthPerComponent p_depth_per_component) {
 	Ref<RenderSceneBuffersGLES3> rb;
 	rb.instantiate();
 	return rb;

@@ -715,8 +715,8 @@ public:
 	FUNC2(viewport_remove_canvas, RID, RID)
 	FUNC3(viewport_set_canvas_transform, RID, RID, const Transform2D &)
 	FUNC2(viewport_set_transparent_background, RID, bool)
-	FUNC2(viewport_set_use_hdr_2d, RID, bool)
-	FUNC1RC(bool, viewport_is_using_hdr_2d, RID)
+	FUNC2(viewport_set_depth_per_component, RID, ViewportDepthPerComponent)
+	FUNC1RC(ViewportDepthPerComponent, viewport_get_depth_per_component, RID)
 	FUNC2(viewport_set_snap_2d_transforms_to_pixel, RID, bool)
 	FUNC2(viewport_set_snap_2d_vertices_to_pixel, RID, bool)
 

@@ -2105,24 +2105,54 @@ void TextureStorage::_update_render_target(RenderTarget *rt) {
 
 	Config *config = Config::get_singleton();
 
-	if (rt->hdr) {
-		rt->color_internal_format = GL_RGBA16F;
-		rt->color_format = GL_RGBA;
-		rt->color_type = GL_FLOAT;
-		rt->color_format_size = 8;
-		rt->image_format = Image::FORMAT_RGBAF;
-	} else if (rt->is_transparent) {
-		rt->color_internal_format = GL_RGBA8;
-		rt->color_format = GL_RGBA;
-		rt->color_type = GL_UNSIGNED_BYTE;
-		rt->color_format_size = 4;
-		rt->image_format = Image::FORMAT_RGBA8;
-	} else {
-		rt->color_internal_format = GL_RGB10_A2;
-		rt->color_format = GL_RGBA;
-		rt->color_type = GL_UNSIGNED_INT_2_10_10_10_REV;
-		rt->color_format_size = 4;
-		rt->image_format = Image::FORMAT_RGBA8;
+	switch (rt->depth_per_component) {
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT:
+			if (rt->is_transparent) {
+				rt->color_internal_format = GL_RGBA8;
+				rt->color_format = GL_RGBA;
+				rt->color_type = GL_UNSIGNED_BYTE;
+				rt->color_format_size = 4;
+				rt->image_format = Image::FORMAT_RGBA8;
+			} else {
+				rt->color_internal_format = GL_RGB10_A2;
+				rt->color_format = GL_RGBA;
+				rt->color_type = GL_UNSIGNED_INT_2_10_10_10_REV;
+				rt->color_format_size = 4;
+				rt->image_format = Image::FORMAT_RGBA8;
+			}
+			break;
+
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT:
+			rt->color_internal_format = GL_RGBA16F;
+			rt->color_format = GL_RGBA;
+			rt->color_type = GL_FLOAT;
+			rt->color_format_size = 8;
+			rt->image_format = Image::FORMAT_RGBAF;
+			break;
+
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_32BIT:
+			rt->color_internal_format = GL_RGBA32F;
+			rt->color_format = GL_RGBA;
+			rt->color_type = GL_FLOAT;
+			rt->color_format_size = 16;
+			rt->image_format = Image::FORMAT_RGBAF;
+			break;
+
+		default:
+			if (rt->is_transparent) {
+				rt->color_internal_format = GL_RGBA8;
+				rt->color_format = GL_RGBA;
+				rt->color_type = GL_UNSIGNED_BYTE;
+				rt->color_format_size = 4;
+				rt->image_format = Image::FORMAT_RGBA8;
+			} else {
+				rt->color_internal_format = GL_RGB10_A2;
+				rt->color_format = GL_RGBA;
+				rt->color_type = GL_UNSIGNED_INT_2_10_10_10_REV;
+				rt->color_format_size = 4;
+				rt->image_format = Image::FORMAT_RGBA8;
+			}
+			break;
 	}
 
 	glDisable(GL_SCISSOR_TEST);
@@ -2243,7 +2273,7 @@ void TextureStorage::_update_render_target(RenderTarget *rt) {
 				texture->layers = 1;
 			}
 			texture->gl_format_cache = rt->color_format;
-			texture->gl_type_cache = !rt->hdr ? GL_UNSIGNED_BYTE : GL_FLOAT; // to set HDR format size to 8 and keep 4 for LDR format
+			texture->gl_type_cache = rt->depth_per_component != RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT ? GL_UNSIGNED_BYTE : GL_FLOAT; // to set HDR format size to 8 and keep 4 for LDR format
 			texture->gl_internal_format_cache = rt->color_internal_format;
 			texture->tex_id = rt->color;
 			texture->width = rt->size.x;
@@ -2703,24 +2733,24 @@ RS::ViewportMSAA TextureStorage::render_target_get_msaa(RID p_render_target) con
 	return rt->msaa;
 }
 
-void TextureStorage::render_target_set_use_hdr(RID p_render_target, bool p_use_hdr_2d) {
+void TextureStorage::render_target_set_depth_per_component(RID p_render_target, RS::ViewportDepthPerComponent p_depth_per_component) {
 	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
 	ERR_FAIL_COND(rt->direct_to_screen);
-	if (p_use_hdr_2d == rt->hdr) {
+	if (p_depth_per_component == rt->depth_per_component) {
 		return;
 	}
 
 	_clear_render_target(rt);
-	rt->hdr = p_use_hdr_2d;
+	rt->depth_per_component = p_depth_per_component;
 	_update_render_target(rt);
 }
 
-bool TextureStorage::render_target_is_using_hdr(RID p_render_target) const {
+RS::ViewportDepthPerComponent TextureStorage::render_target_get_depth_per_component(RID p_render_target) const {
 	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
-	ERR_FAIL_NULL_V(rt, false);
-
-	return rt->hdr;
+	ERR_FAIL_NULL_V(rt, RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT);
+	
+	return rt->depth_per_component;
 }
 
 GLuint TextureStorage::render_target_get_color_internal_format(RID p_render_target) const {

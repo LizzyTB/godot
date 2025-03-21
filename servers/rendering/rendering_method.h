@@ -329,7 +329,7 @@ public:
 
 	/* Render Buffers */
 
-	virtual Ref<RenderSceneBuffers> render_buffers_create() = 0;
+	virtual Ref<RenderSceneBuffers> render_buffers_create(RS::ViewportDepthPerComponent p_depth_per_component) = 0;
 
 	virtual void gi_set_use_half_resolution(bool p_enable) = 0;
 

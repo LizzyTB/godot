@@ -156,8 +156,8 @@ public:
 	virtual void render_target_set_msaa_needs_resolve(RID p_render_target, bool p_needs_resolve) = 0;
 	virtual bool render_target_get_msaa_needs_resolve(RID p_render_target) const = 0;
 	virtual void render_target_do_msaa_resolve(RID p_render_target) = 0;
-	virtual void render_target_set_use_hdr(RID p_render_target, bool p_use_hdr) = 0;
-	virtual bool render_target_is_using_hdr(RID p_render_target) const = 0;
+	virtual void render_target_set_depth_per_component(RID p_render_target, RS::ViewportDepthPerComponent p_depth_per_component) = 0;
+	virtual RS::ViewportDepthPerComponent render_target_get_depth_per_component(RID p_render_target) const = 0;
 
 	virtual void render_target_request_clear(RID p_render_target, const Color &p_clear_color) = 0;
 	virtual bool render_target_is_clear_requested(RID p_render_target) = 0;

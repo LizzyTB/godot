@@ -370,9 +370,19 @@ float RenderForwardMobile::_render_buffers_get_luminance_multiplier() {
 	return 2.0;
 }
 
-RD::DataFormat RenderForwardMobile::_render_buffers_get_color_format() {
+RD::DataFormat RenderForwardMobile::_render_buffers_get_color_format(RS::ViewportDepthPerComponent p_depth_per_component) {
 	// Using 32bit buffers enables AFBC on mobile devices which should have a definite performance improvement (MALI G710 and newer support this on 64bit RTs)
-	return RD::DATA_FORMAT_A2B10G10R10_UNORM_PACK32;
+	switch (p_depth_per_component) {
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT:
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT:
+			return RD::DATA_FORMAT_A2B10G10R10_UNORM_PACK32;
+
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_32BIT:
+			return RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
+
+		default:
+			return RD::DATA_FORMAT_A2B10G10R10_UINT_PACK32;
+	}
 }
 
 bool RenderForwardMobile::_render_buffers_can_be_storage() {
@@ -790,7 +800,7 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 	bool merge_transparent_pass = true; // If true: we can do our transparent pass in the same pass as our opaque pass.
 	bool using_subpass_post_process = true; // If true: we can do our post processing in a subpass
 	RendererRD::MaterialStorage::Samplers samplers;
-	bool hdr_render_target = false;
+	RS::ViewportDepthPerComponent depth_per_component = RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT;
 
 	RS::ViewportMSAA msaa = rb->get_msaa_3d();
 	bool use_msaa = msaa != RS::VIEWPORT_MSAA_DISABLED;
@@ -898,11 +908,23 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 		}
 		samplers = rb->get_samplers();
 
-		hdr_render_target = RendererRD::TextureStorage::get_singleton()->render_target_is_using_hdr(rb->get_render_target());
-		if (hdr_render_target) {
-			global_pipeline_data_required.use_hdr_render_target = true;
-		} else {
-			global_pipeline_data_required.use_ldr_render_target = true;
+		depth_per_component = RendererRD::TextureStorage::get_singleton()->render_target_get_depth_per_component(rb->get_render_target());
+		switch (depth_per_component) {
+			case RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT:
+				global_pipeline_data_required.depth_per_component = 0;
+				break;
+
+			case RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT:
+				global_pipeline_data_required.depth_per_component = 1;
+				break;
+
+			case RS::VIEWPORT_DEPTH_PER_COMPONENT_32BIT:
+				global_pipeline_data_required.depth_per_component = 2;
+				break;
+
+			default:
+				global_pipeline_data_required.depth_per_component = 0;
+				break;
 		}
 	} else {
 		ERR_FAIL(); //bug?
@@ -1114,7 +1136,7 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 				WARN_PRINT_ONCE("Canvas background is not supported in multiview!");
 			} else {
 				RID texture = RendererRD::TextureStorage::get_singleton()->render_target_get_rd_texture(rb->get_render_target());
-				bool convert_to_linear = !hdr_render_target;
+				bool convert_to_linear = depth_per_component == RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT;
 
 				copy_effects->copy_to_drawlist(draw_list, fb_format, texture, convert_to_linear);
 			}
@@ -2859,7 +2881,7 @@ void RenderForwardMobile::_geometry_instance_update(RenderGeometryInstance *p_ge
 	ginstance->dirty_list_element.remove_from_list();
 }
 
-static RD::FramebufferFormatID _get_color_framebuffer_format_for_pipeline(RD::DataFormat p_color_format, bool p_can_be_storage, RD::TextureSamples p_samples, RD::TextureSamples p_target_samples, bool p_vrs, bool p_post_pass, bool p_hdr, uint32_t p_view_count) {
+static RD::FramebufferFormatID _get_color_framebuffer_format_for_pipeline(RD::DataFormat p_color_format, bool p_can_be_storage, RD::TextureSamples p_samples, RD::TextureSamples p_target_samples, bool p_vrs, bool p_post_pass, RS::ViewportDepthPerComponent p_depth_per_component, uint32_t p_view_count) {
 	const bool multisampling = p_samples > RD::TEXTURE_SAMPLES_1;
 	RD::AttachmentFormat attachment;
 
@@ -2914,7 +2936,7 @@ static RD::FramebufferFormatID _get_color_framebuffer_format_for_pipeline(RD::Da
 	passes.push_back(pass);
 
 	if (p_post_pass) {
-		attachment.format = RendererRD::TextureStorage::render_target_get_color_format(p_hdr, false);
+		attachment.format = RendererRD::TextureStorage::render_target_get_color_format(p_depth_per_component, false);
 
 		if (p_view_count > 1 || p_target_samples == RD::TEXTURE_SAMPLES_1) {
 			attachment.samples = RD::TEXTURE_SAMPLES_1;
@@ -2997,22 +3019,42 @@ void RenderForwardMobile::_mesh_compile_pipelines_for_surface(const SurfacePipel
 	pipeline_key.wireframe = false;
 
 	const bool multiview_enabled = p_global.use_multiview && scene_shader.is_multiview_enabled();
-	const RD::DataFormat buffers_color_format = _render_buffers_get_color_format();
+	const RD::DataFormat buffers_color_format = _render_buffers_get_color_format(RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT);
 	const bool buffers_can_be_storage = _render_buffers_can_be_storage();
 	const uint32_t vrs_iterations = p_global.use_vrs ? 2 : 1;
 
 	const uint32_t post_pass_start = p_global.use_separate_post_pass ? 0 : 1;
 	const uint32_t post_pass_iterations = p_global.use_subpass_post_pass ? 2 : (post_pass_start + 1);
 
-	const uint32_t hdr_start = p_global.use_ldr_render_target ? 0 : 1;
-	const uint32_t hdr_target_iterations = p_global.use_hdr_render_target ? 2 : 1;
+	const uint32_t hdr_start = p_global.depth_per_component ? 1 : 0;
+	const uint32_t hdr_target_iterations = p_global.depth_per_component ? 2 : 1;
+
+	RS::ViewportDepthPerComponent depth_per_component;
+
+	switch (p_global.depth_per_component) {
+		case 0:
+			depth_per_component = RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT;
+			break;
+
+		case 1:
+			depth_per_component = RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT;
+			break;
+
+		case 2:
+			depth_per_component = RS::VIEWPORT_DEPTH_PER_COMPONENT_32BIT;
+			break;
+
+		default:
+			depth_per_component = RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT;
+			break;
+	}
 
 	for (uint32_t use_vrs = 0; use_vrs < vrs_iterations; use_vrs++) {
 		for (uint32_t use_post_pass = post_pass_start; use_post_pass < post_pass_iterations; use_post_pass++) {
 			const uint32_t hdr_iterations = use_post_pass ? hdr_target_iterations : (hdr_start + 1);
 			for (uint32_t use_hdr = hdr_start; use_hdr < hdr_iterations; use_hdr++) {
 				pipeline_key.version = SceneShaderForwardMobile::SHADER_VERSION_COLOR_PASS;
-				pipeline_key.framebuffer_format_id = _get_color_framebuffer_format_for_pipeline(buffers_color_format, buffers_can_be_storage, RD::TextureSamples(p_global.texture_samples), RD::TextureSamples(p_global.target_samples), use_vrs, use_post_pass, use_hdr, 1);
+				pipeline_key.framebuffer_format_id = _get_color_framebuffer_format_for_pipeline(buffers_color_format, buffers_can_be_storage, RD::TextureSamples(p_global.texture_samples), RD::TextureSamples(p_global.target_samples), use_vrs, use_post_pass, depth_per_component, 1);
 				_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface, p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
 
 				if (p_global.use_lightmaps && p_surface.can_use_lightmap) {
@@ -3024,7 +3066,7 @@ void RenderForwardMobile::_mesh_compile_pipelines_for_surface(const SurfacePipel
 					// View count is assumed to be 2 as the configuration is dependent on the viewport. It's likely a safe assumption for stereo rendering.
 					const uint32_t view_count = 2;
 					pipeline_key.version = SceneShaderForwardMobile::SHADER_VERSION_COLOR_PASS_MULTIVIEW;
-					pipeline_key.framebuffer_format_id = _get_color_framebuffer_format_for_pipeline(buffers_color_format, buffers_can_be_storage, RD::TextureSamples(p_global.texture_samples), RD::TextureSamples(p_global.target_samples), use_vrs, use_post_pass, use_hdr, view_count);
+					pipeline_key.framebuffer_format_id = _get_color_framebuffer_format_for_pipeline(buffers_color_format, buffers_can_be_storage, RD::TextureSamples(p_global.texture_samples), RD::TextureSamples(p_global.target_samples), use_vrs, use_post_pass, depth_per_component, view_count);
 					_mesh_compile_pipeline_for_surface(p_surface.shader, p_surface.mesh_surface, p_surface.instanced, p_source, pipeline_key, r_pipeline_pairs);
 
 					if (p_global.use_lightmaps && p_surface.can_use_lightmap) {
@@ -3195,7 +3237,7 @@ void RenderForwardMobile::_update_shader_quality_settings() {
 RenderForwardMobile::RenderForwardMobile() {
 	singleton = this;
 
-	sky.set_texture_format(_render_buffers_get_color_format());
+	sky.set_texture_format(_render_buffers_get_color_format(RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT));
 
 	String defines;
 
@@ -3241,8 +3283,7 @@ RenderForwardMobile::RenderForwardMobile() {
 
 	// Only update these from the project setting at init time.
 	const bool root_hdr_render_target = GLOBAL_GET("rendering/viewport/hdr_2d");
-	global_pipeline_data_required.use_hdr_render_target = root_hdr_render_target;
-	global_pipeline_data_required.use_ldr_render_target = !root_hdr_render_target;
+	global_pipeline_data_required.depth_per_component = root_hdr_render_target ? 1 : 0;
 }
 
 RenderForwardMobile::~RenderForwardMobile() {

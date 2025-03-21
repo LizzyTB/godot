@@ -390,7 +390,7 @@ protected:
 	virtual void _update_shader_quality_settings() override;
 
 	virtual float _render_buffers_get_luminance_multiplier() override;
-	virtual RD::DataFormat _render_buffers_get_color_format() override;
+	virtual RD::DataFormat _render_buffers_get_color_format(RS::ViewportDepthPerComponent p_depth_per_component) override;
 	virtual bool _render_buffers_can_be_storage() override;
 
 	virtual RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers) override;
@@ -626,6 +626,7 @@ public:
 			struct {
 				uint32_t texture_samples : 3;
 				uint32_t target_samples : 3;
+				uint32_t depth_per_component : 2;
 				uint32_t use_reflection_probes : 1;
 				uint32_t use_lightmaps : 1;
 				uint32_t use_multiview : 1;
@@ -636,8 +637,6 @@ public:
 				uint32_t use_vrs : 1;
 				uint32_t use_subpass_post_pass : 1;
 				uint32_t use_separate_post_pass : 1;
-				uint32_t use_hdr_render_target : 1;
-				uint32_t use_ldr_render_target : 1;
 			};
 		};
 	};

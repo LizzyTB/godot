@@ -554,6 +554,10 @@ void Camera3D::set_environment(const Ref<Environment> &p_environment) {
 		RS::get_singleton()->camera_set_environment(camera, RID());
 	}
 	_update_camera_mode();
+
+	if (viewport) {
+		viewport->update_configuration_warnings();
+	}
 }
 
 Ref<Environment> Camera3D::get_environment() const {

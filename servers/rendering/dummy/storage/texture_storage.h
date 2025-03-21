@@ -178,8 +178,8 @@ public:
 	virtual void render_target_set_msaa_needs_resolve(RID p_render_target, bool p_needs_resolve) override {}
 	virtual bool render_target_get_msaa_needs_resolve(RID p_render_target) const override { return false; }
 	virtual void render_target_do_msaa_resolve(RID p_render_target) override {}
-	virtual void render_target_set_use_hdr(RID p_render_target, bool p_use_hdr_2d) override {}
-	virtual bool render_target_is_using_hdr(RID p_render_target) const override { return false; }
+	virtual void render_target_set_depth_per_component(RID p_render_target, RS::ViewportDepthPerComponent p_depth_per_component) override {}
+	virtual RS::ViewportDepthPerComponent render_target_get_depth_per_component(RID p_render_target) const override { return RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT; }
 
 	virtual void render_target_request_clear(RID p_render_target, const Color &p_clear_color) override {}
 	virtual bool render_target_is_clear_requested(RID p_render_target) override { return false; }

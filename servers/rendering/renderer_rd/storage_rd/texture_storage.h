@@ -365,7 +365,8 @@ private:
 		Image::Format image_format = Image::FORMAT_L8;
 
 		bool is_transparent = false;
-		bool use_hdr = false;
+
+		RS::ViewportDepthPerComponent depth_per_component = RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT;
 
 		bool sdf_enabled = false;
 
@@ -756,8 +757,8 @@ public:
 	virtual void render_target_set_msaa_needs_resolve(RID p_render_target, bool p_needs_resolve) override;
 	virtual bool render_target_get_msaa_needs_resolve(RID p_render_target) const override;
 	virtual void render_target_do_msaa_resolve(RID p_render_target) override;
-	virtual void render_target_set_use_hdr(RID p_render_target, bool p_use_hdr) override;
-	virtual bool render_target_is_using_hdr(RID p_render_target) const override;
+	virtual void render_target_set_depth_per_component(RID p_render_target, RS::ViewportDepthPerComponent p_depth_per_component) override;
+	virtual RS::ViewportDepthPerComponent render_target_get_depth_per_component(RID p_render_target) const override;
 
 	void render_target_copy_to_back_buffer(RID p_render_target, const Rect2i &p_region, bool p_gen_mipmaps);
 	void render_target_clear_back_buffer(RID p_render_target, const Rect2i &p_region, const Color &p_color);
@@ -814,7 +815,7 @@ public:
 	void render_target_set_framebuffer_uniform_set(RID p_render_target, RID p_uniform_set);
 	void render_target_set_backbuffer_uniform_set(RID p_render_target, RID p_uniform_set);
 
-	static RD::DataFormat render_target_get_color_format(bool p_use_hdr, bool p_srgb);
+	static RD::DataFormat render_target_get_color_format(RS::ViewportDepthPerComponent p_depth_per_component, bool p_srgb);
 	static uint32_t render_target_get_color_usage_bits(bool p_msaa);
 };
 

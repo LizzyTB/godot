@@ -236,13 +236,13 @@ void RendererSceneRenderRD::_debug_sdfgi_probes(Ref<RenderSceneBuffersRD> p_rend
 }
 
 ////////////////////////////////
-Ref<RenderSceneBuffers> RendererSceneRenderRD::render_buffers_create() {
+Ref<RenderSceneBuffers> RendererSceneRenderRD::render_buffers_create(RS::ViewportDepthPerComponent p_depth_per_component) {
 	Ref<RenderSceneBuffersRD> rb;
 	rb.instantiate();
 
 	rb->set_can_be_storage(_render_buffers_can_be_storage());
 	rb->set_max_cluster_elements(max_cluster_elements);
-	rb->set_base_data_format(_render_buffers_get_color_format());
+	rb->set_base_data_format(_render_buffers_get_color_format(p_depth_per_component));
 	if (vrs) {
 		rb->set_vrs(vrs);
 	}
@@ -651,13 +651,15 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(const Rende
 		tonemap.luminance_multiplier = _render_buffers_get_luminance_multiplier();
 		tonemap.view_count = rb->get_view_count();
 
-		tonemap.convert_to_srgb = !texture_storage->render_target_is_using_hdr(render_target);
+		RS::ViewportDepthPerComponent depth_per_component = texture_storage->render_target_get_depth_per_component(render_target);
+
+		tonemap.convert_to_srgb = depth_per_component == RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT;
 
 		RID dest_fb;
 		if (spatial_upscaler != nullptr) {
 			// If we use a spatial upscaler to upscale we need to write our result into an intermediate buffer.
 			// Note that this is cached so we only create the texture the first time.
-			RID dest_texture = rb->create_texture(SNAME("Tonemapper"), SNAME("destination"), _render_buffers_get_color_format(), RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT, RD::TEXTURE_SAMPLES_1, Size2i(), 0, 1, true, true);
+			RID dest_texture = rb->create_texture(SNAME("Tonemapper"), SNAME("destination"), _render_buffers_get_color_format(depth_per_component), RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT, RD::TEXTURE_SAMPLES_1, Size2i(), 0, 1, true, true);
 			dest_fb = FramebufferCacheRD::get_singleton()->get_cache(dest_texture);
 		} else {
 			// If we do a bilinear upscale we just render into our render target and our shader will upscale automatically.
@@ -765,7 +767,7 @@ void RendererSceneRenderRD::_post_process_subpass(RID p_source_texture, RID p_fr
 	tonemap.luminance_multiplier = _render_buffers_get_luminance_multiplier();
 	tonemap.view_count = rb->get_view_count();
 
-	tonemap.convert_to_srgb = !texture_storage->render_target_is_using_hdr(rb->get_render_target());
+	tonemap.convert_to_srgb = !texture_storage->render_target_get_depth_per_component(rb->get_render_target()) != RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT;
 
 	tone_mapper->tonemapper(draw_list, p_source_texture, RD::get_singleton()->framebuffer_get_format(p_framebuffer), tonemap);
 
@@ -933,8 +935,18 @@ float RendererSceneRenderRD::_render_buffers_get_luminance_multiplier() {
 	return 1.0;
 }
 
-RD::DataFormat RendererSceneRenderRD::_render_buffers_get_color_format() {
-	return RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+RD::DataFormat RendererSceneRenderRD::_render_buffers_get_color_format(RS::ViewportDepthPerComponent p_depth_per_component) {
+	switch (p_depth_per_component) {
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT:
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT:
+			return RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_32BIT:
+			return RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
+
+		default:
+		return RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+	}
 }
 
 bool RendererSceneRenderRD::_render_buffers_can_be_storage() {

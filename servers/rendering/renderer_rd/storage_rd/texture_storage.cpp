@@ -3323,13 +3323,26 @@ void TextureStorage::_update_render_target(RenderTarget *rt) {
 		return;
 	}
 
-	rt->color_format = render_target_get_color_format(rt->use_hdr, false);
-	rt->color_format_srgb = render_target_get_color_format(rt->use_hdr, true);
+	rt->color_format = render_target_get_color_format(rt->depth_per_component, false);
+	rt->color_format_srgb = render_target_get_color_format(rt->depth_per_component, true);
 
-	if (rt->use_hdr) {
-		rt->image_format = rt->is_transparent ? Image::FORMAT_RGBAH : Image::FORMAT_RGBH;
-	} else {
-		rt->image_format = rt->is_transparent ? Image::FORMAT_RGBA8 : Image::FORMAT_RGB8;
+	switch (rt->depth_per_component) {
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT:
+			rt->image_format = rt->is_transparent ? Image::FORMAT_RGBA8 : Image::FORMAT_RGB8;
+			break;
+
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT:
+			rt->image_format = rt->is_transparent ? Image::FORMAT_RGBAH : Image::FORMAT_RGBH;
+			break;
+
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_32BIT:
+			rt->image_format = rt->is_transparent ? Image::FORMAT_RGBAF : Image::FORMAT_RGBF;
+			break;
+
+		default:
+			ERR_PRINT("Invalid viewport depth per components, default to 8-bit");
+			rt->image_format = rt->is_transparent ? Image::FORMAT_RGBA8 : Image::FORMAT_RGB8;
+			break;
 	}
 
 	RD::TextureFormat rd_color_attachment_format;
@@ -3412,7 +3425,25 @@ void TextureStorage::_update_render_target(RenderTarget *rt) {
 		tex->rd_format = rt->color_format;
 		tex->rd_format_srgb = rt->color_format_srgb;
 		tex->format = rt->image_format;
-		tex->validated_format = rt->use_hdr ? Image::FORMAT_RGBAH : Image::FORMAT_RGBA8;
+
+		switch (rt->depth_per_component) {
+			case RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT:
+				tex->validated_format = Image::FORMAT_RGBA8;
+				break;
+
+			case RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT:
+				tex->validated_format = Image::FORMAT_RGBAH;
+				break;
+
+			case RS::VIEWPORT_DEPTH_PER_COMPONENT_32BIT:
+				tex->validated_format = Image::FORMAT_RGBAF;
+				break;
+
+			default:
+				ERR_PRINT("Invalid viewport depth per components, default to 8-bit");
+				tex->validated_format = Image::FORMAT_RGBA8;
+				break;
+		}
 
 		Vector<RID> proxies = tex->proxies; //make a copy, since update may change it
 		for (int i = 0; i < proxies.size(); i++) {
@@ -3649,6 +3680,25 @@ RS::ViewportMSAA TextureStorage::render_target_get_msaa(RID p_render_target) con
 	return rt->msaa;
 }
 
+void TextureStorage::render_target_set_depth_per_component(RID p_render_target, RS::ViewportDepthPerComponent p_depth_per_component) {
+	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
+	ERR_FAIL_NULL(rt);
+
+	if (p_depth_per_component == rt->depth_per_component) {
+		return;
+	}
+
+	rt->depth_per_component = p_depth_per_component;
+	_update_render_target(rt);
+}
+
+RS::ViewportDepthPerComponent TextureStorage::render_target_get_depth_per_component(RID p_render_target) const {
+	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
+	ERR_FAIL_NULL_V(rt, RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT);
+
+	return rt->depth_per_component;
+}
+
 void TextureStorage::render_target_set_msaa_needs_resolve(RID p_render_target, bool p_needs_resolve) {
 	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -3672,25 +3722,6 @@ void TextureStorage::render_target_do_msaa_resolve(RID p_render_target) {
 	RD::get_singleton()->draw_list_begin(rt->get_framebuffer());
 	RD::get_singleton()->draw_list_end();
 	rt->msaa_needs_resolve = false;
-}
-
-void TextureStorage::render_target_set_use_hdr(RID p_render_target, bool p_use_hdr) {
-	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
-	ERR_FAIL_NULL(rt);
-
-	if (p_use_hdr == rt->use_hdr) {
-		return;
-	}
-
-	rt->use_hdr = p_use_hdr;
-	_update_render_target(rt);
-}
-
-bool TextureStorage::render_target_is_using_hdr(RID p_render_target) const {
-	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
-	ERR_FAIL_NULL_V(rt, false);
-
-	return rt->use_hdr;
 }
 
 RID TextureStorage::render_target_get_rd_framebuffer(RID p_render_target) {
@@ -3769,7 +3800,8 @@ bool TextureStorage::render_target_is_clear_requested(RID p_render_target) {
 Color TextureStorage::render_target_get_clear_request_color(RID p_render_target) {
 	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, Color());
-	return rt->use_hdr ? rt->clear_color.srgb_to_linear() : rt->clear_color;
+
+	return rt->depth_per_component != RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT ? rt->clear_color.srgb_to_linear() : rt->clear_color;
 }
 
 void TextureStorage::render_target_disable_clear_request(RID p_render_target) {
@@ -3785,7 +3817,7 @@ void TextureStorage::render_target_do_clear_request(RID p_render_target) {
 		return;
 	}
 	Vector<Color> clear_colors;
-	clear_colors.push_back(rt->use_hdr ? rt->clear_color.srgb_to_linear() : rt->clear_color);
+	clear_colors.push_back(rt->depth_per_component != RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT ? rt->clear_color.srgb_to_linear() : rt->clear_color);
 	RD::get_singleton()->draw_list_begin(rt->get_framebuffer(), RD::DRAW_CLEAR_COLOR_0, clear_colors);
 	RD::get_singleton()->draw_list_end();
 	rt->clear_requested = false;
@@ -4103,7 +4135,7 @@ void TextureStorage::render_target_copy_to_back_buffer(RID p_render_target, cons
 	// TODO figure out stereo support here
 
 	if (RendererSceneRenderRD::get_singleton()->_render_buffers_can_be_storage()) {
-		copy_effects->copy_to_rect(rt->color, rt->backbuffer_mipmap0, region, false, false, false, !rt->use_hdr, true);
+		copy_effects->copy_to_rect(rt->color, rt->backbuffer_mipmap0, region, false, false, false, rt->depth_per_component != RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT, true);
 	} else {
 		Rect2 src_rect = Rect2(region);
 		src_rect.position /= Size2(rt->size);
@@ -4128,7 +4160,7 @@ void TextureStorage::render_target_copy_to_back_buffer(RID p_render_target, cons
 
 		RID mipmap = rt->backbuffer_mipmaps[i];
 		if (RendererSceneRenderRD::get_singleton()->_render_buffers_can_be_storage()) {
-			copy_effects->gaussian_blur(prev_texture, mipmap, region, texture_size, !rt->use_hdr);
+			copy_effects->gaussian_blur(prev_texture, mipmap, region, texture_size, rt->depth_per_component != RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT);
 		} else {
 			copy_effects->gaussian_blur_raster(prev_texture, mipmap, region, texture_size);
 		}
@@ -4160,7 +4192,7 @@ void TextureStorage::render_target_clear_back_buffer(RID p_render_target, const 
 
 	// Single texture copy for backbuffer.
 	if (RendererSceneRenderRD::get_singleton()->_render_buffers_can_be_storage()) {
-		copy_effects->set_color(rt->backbuffer_mipmap0, p_color, region, !rt->use_hdr);
+		copy_effects->set_color(rt->backbuffer_mipmap0, p_color, region, rt->depth_per_component != RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT);
 	} else {
 		copy_effects->set_color_raster(rt->backbuffer_mipmap0, p_color, region);
 	}
@@ -4200,7 +4232,7 @@ void TextureStorage::render_target_gen_back_buffer_mipmaps(RID p_render_target, 
 		RID mipmap = rt->backbuffer_mipmaps[i];
 
 		if (RendererSceneRenderRD::get_singleton()->_render_buffers_can_be_storage()) {
-			copy_effects->gaussian_blur(prev_texture, mipmap, region, texture_size, !rt->use_hdr);
+			copy_effects->gaussian_blur(prev_texture, mipmap, region, texture_size, rt->depth_per_component != RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT);
 		} else {
 			copy_effects->gaussian_blur_raster(prev_texture, mipmap, region, texture_size);
 		}
@@ -4274,11 +4306,17 @@ RID TextureStorage::render_target_get_vrs_texture(RID p_render_target) const {
 	return rt->vrs_texture;
 }
 
-RD::DataFormat TextureStorage::render_target_get_color_format(bool p_use_hdr, bool p_srgb) {
-	if (p_use_hdr) {
-		return RendererSceneRenderRD::get_singleton()->_render_buffers_get_color_format();
-	} else {
-		return p_srgb ? RD::DATA_FORMAT_R8G8B8A8_SRGB : RD::DATA_FORMAT_R8G8B8A8_UNORM;
+RD::DataFormat TextureStorage::render_target_get_color_format(RS::ViewportDepthPerComponent p_depth_per_component, bool p_srgb) {
+	switch (p_depth_per_component) {
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_8BIT:
+			return p_srgb ? RD::DATA_FORMAT_R8G8B8A8_SRGB : RD::DATA_FORMAT_R8G8B8A8_UNORM;
+
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_16BIT:
+		case RS::VIEWPORT_DEPTH_PER_COMPONENT_32BIT:
+			return RendererSceneRenderRD::get_singleton()->_render_buffers_get_color_format(p_depth_per_component);
+
+		default:
+			return RD::DATA_FORMAT_R8G8B8A8_UNORM;
 	}
 }
 
