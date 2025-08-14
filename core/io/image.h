@@ -71,6 +71,12 @@ public:
 		MAX_PIXELS = 268435456 // 16384 ^ 2
 	};
 
+	enum Quality {
+		QUALITY_ORIGINAL,
+		QUALITY_MAX_SIZE,
+		QUALITY_DOWNSCALE_FACTOR
+	};
+
 	enum Format : int32_t {
 		FORMAT_L8, // Luminance
 		FORMAT_LA8, // Luminance-Alpha
@@ -249,10 +255,13 @@ protected:
 	static void _bind_methods();
 
 private:
+	Quality quality = QUALITY_ORIGINAL;
 	Format format = FORMAT_L8;
 	Vector<uint8_t> data;
 	int width = 0;
 	int height = 0;
+	int original_width = 0;
+	int original_height = 0;
 	bool mipmaps = false;
 
 	void _copy_internals_from(const Image &p_image);
@@ -291,11 +300,17 @@ public:
 	int get_width() const;
 	int get_height() const;
 	Size2i get_size() const;
+	int get_original_width() const;
+	int get_original_height() const ;
+	Size2i get_original_size() const;
 	bool has_mipmaps() const;
 	int get_mipmap_count() const;
 
 	// Convert the image to another format, conversion only to raw byte format.
 	void convert(Format p_new_format);
+
+	Quality get_quality() const;
+	void set_quality(Quality p_quality);
 
 	Format get_format() const;
 
@@ -448,6 +463,7 @@ public:
 	Dictionary compute_image_metrics(const Ref<Image> p_compared_image, bool p_luma_metric = true);
 };
 
+VARIANT_ENUM_CAST(Image::Quality)
 VARIANT_ENUM_CAST(Image::Format)
 VARIANT_ENUM_CAST(Image::Interpolation)
 VARIANT_ENUM_CAST(Image::CompressMode)
