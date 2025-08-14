@@ -31,6 +31,7 @@
 #include "compressed_texture.h"
 
 #include "scene/resources/bit_map.h"
+#include "core/config/project_settings.h"
 
 Error CompressedTexture2D::_load_data(const String &p_path, int &r_width, int &r_height, Ref<Image> &image, bool &r_request_3d, bool &r_request_normal, bool &r_request_roughness, int &mipmap_limit, int p_size_limit) {
 	alpha_cache.unref();
@@ -83,6 +84,14 @@ Error CompressedTexture2D::_load_data(const String &p_path, int &r_width, int &r
 
 	if (image.is_null() || image->is_empty()) {
 		return ERR_CANT_OPEN;
+	}
+
+	if (!(df & FORMAT_BIT_KEEP_ORIGINAL_QUALITY)) {
+		Image::Quality desired_quality = GLOBAL_GET("rendering/textures/quality/default_quality_mode");
+
+		if (desired_quality != Image::QUALITY_ORIGINAL) {
+			image->set_quality(desired_quality);
+		}
 	}
 
 	return OK;
