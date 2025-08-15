@@ -3615,9 +3615,9 @@ void RenderingServer::init() {
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/textures/webp_compression/compression_method", PROPERTY_HINT_RANGE, "0,6,1"), 2);
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "rendering/textures/webp_compression/lossless_compression_factor", PROPERTY_HINT_RANGE, "0,100,1"), 25);
 
-	GLOBAL_DEF_RST(PropertyInfo(Variant::INT, "rendering/textures/quality/default_quality_mode", PROPERTY_HINT_RANGE, "0,2"), 0);
-	GLOBAL_DEF_RST(PropertyInfo(Variant::VECTOR2I, "rendering/textures/quality/max_size"), Vector2i(2048, 2048));
-	GLOBAL_DEF_RST(PropertyInfo(Variant::INT, "rendering/textures/quality/downscale_factor", PROPERTY_HINT_RANGE, "1,14"), 1);
+	GLOBAL_DEF_RST(PropertyInfo(Variant::INT, "rendering/textures/performance/default_mode", PROPERTY_HINT_ENUM, "Original Resolution,Max Resolution,Downscale Resolution"), 0);
+	GLOBAL_DEF_RST(PropertyInfo(Variant::VECTOR2I, "rendering/textures/performance/max_resolution"), Vector2i(2048, 2048));
+	GLOBAL_DEF_RST(PropertyInfo(Variant::INT, "rendering/textures/performance/downscale_factor", PROPERTY_HINT_RANGE, "1,14"), 1);
 
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "rendering/limits/time/time_rollover_secs", PROPERTY_HINT_RANGE, "1,10000,1,or_greater,suffix:s"), 3600);
 
