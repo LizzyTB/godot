@@ -86,10 +86,10 @@ Error CompressedTexture2D::_load_data(const String &p_path, int &r_width, int &r
 		return ERR_CANT_OPEN;
 	}
 
-	if (!(df & FORMAT_BIT_FORCE_ORIGINAL_RESOLUTION)) {
+	if (!(df & FORMAT_BIT_FORCE_ORIGINAL_SIZE)) {
 		Image::PerformanceMode performance_mode = GLOBAL_GET("rendering/textures/performance/default_mode");
 
-		if (performance_mode != Image::PERFORMANCE_MODE_ORIGINAL_RESOLUTION) {
+		if (performance_mode != Image::PERFORMANCE_MODE_ORIGINAL_SIZE) {
 			image->set_performance_mode(performance_mode);
 		}
 	}

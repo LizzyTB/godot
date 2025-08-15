@@ -783,7 +783,7 @@ Image::PerformanceMode Image::get_performance_mode() const {
 
 void Image::set_performance_mode(PerformanceMode p_performance_mode) {
 	switch (performance_mode) {
-		case PERFORMANCE_MODE_ORIGINAL_RESOLUTION:
+		case PERFORMANCE_MODE_ORIGINAL_SIZE:
 			break;
 
 		default:
@@ -796,11 +796,11 @@ void Image::set_performance_mode(PerformanceMode p_performance_mode) {
 	Vector2i desired_size = size;
 
 	switch (performance_mode) {
-		case PERFORMANCE_MODE_ORIGINAL_RESOLUTION:
+		case PERFORMANCE_MODE_ORIGINAL_SIZE:
 			break;
 
-		case PERFORMANCE_MODE_MAX_RESOLUTION: {
-			Vector2i max_size = GLOBAL_GET("rendering/textures/performance/max_resolution");
+		case PERFORMANCE_MODE_MAX_SIZE: {
+			Vector2i max_size = GLOBAL_GET("rendering/textures/performance/max_size");
 
 			if (desired_size.x > max_size.x) {
 				desired_size.x = max_size.x;
@@ -813,7 +813,7 @@ void Image::set_performance_mode(PerformanceMode p_performance_mode) {
 			break;
 		}
 
-		case PERFORMANCE_MODE_DOWNSCALE_RESOLUTION: {
+		case PERFORMANCE_MODE_DOWNSCALE_SIZE: {
 			int factor = GLOBAL_GET("rendering/textures/performance/downscale_factor");
 			factor = CLAMP(factor, 1, 14);
 
@@ -1535,7 +1535,7 @@ void Image::resize(int p_width, int p_height, Interpolation p_interpolation) {
 	}
 
 	_copy_internals_from(dst);
-	performance_mode = PERFORMANCE_MODE_ORIGINAL_RESOLUTION;
+	performance_mode = PERFORMANCE_MODE_ORIGINAL_SIZE;
 }
 
 void Image::crop_from_point(int p_x, int p_y, int p_width, int p_height) {
@@ -2351,7 +2351,7 @@ void Image::initialize_data(int p_width, int p_height, bool p_use_mipmaps, Forma
 
 	mipmaps = p_use_mipmaps;
 
-	performance_mode = PERFORMANCE_MODE_ORIGINAL_RESOLUTION;
+	performance_mode = PERFORMANCE_MODE_ORIGINAL_SIZE;
 }
 
 void Image::initialize_data(const char **p_xpm) {
@@ -2361,7 +2361,7 @@ void Image::initialize_data(const char **p_xpm) {
 	mipmaps = false;
 	bool has_alpha = false;
 
-	performance_mode = PERFORMANCE_MODE_ORIGINAL_RESOLUTION;
+	performance_mode = PERFORMANCE_MODE_ORIGINAL_SIZE;
 
 	enum Status {
 		READING_HEADER,
@@ -3759,9 +3759,9 @@ void Image::_bind_methods() {
 	BIND_CONSTANT(MAX_WIDTH);
 	BIND_CONSTANT(MAX_HEIGHT);
 
-	BIND_ENUM_CONSTANT(PERFORMANCE_MODE_ORIGINAL_RESOLUTION);
-	BIND_ENUM_CONSTANT(PERFORMANCE_MODE_MAX_RESOLUTION);
-	BIND_ENUM_CONSTANT(PERFORMANCE_MODE_DOWNSCALE_RESOLUTION);
+	BIND_ENUM_CONSTANT(PERFORMANCE_MODE_ORIGINAL_SIZE);
+	BIND_ENUM_CONSTANT(PERFORMANCE_MODE_MAX_SIZE);
+	BIND_ENUM_CONSTANT(PERFORMANCE_MODE_DOWNSCALE_SIZE);
 	BIND_ENUM_CONSTANT(FORMAT_L8);
 	BIND_ENUM_CONSTANT(FORMAT_LA8);
 	BIND_ENUM_CONSTANT(FORMAT_R8);

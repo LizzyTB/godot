@@ -568,7 +568,7 @@ void ProjectDialog::ok_pressed() {
 		} else {
 			fa_import->store_line("[params]");
 			fa_import->store_line("");
-			fa_import->store_line("performance/force_original_resolution=true");
+			fa_import->store_line("performance/force_original_size=true");
 			fa_import->close();
 		}
 

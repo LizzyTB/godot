@@ -72,9 +72,9 @@ public:
 	};
 
 	enum PerformanceMode {
-		PERFORMANCE_MODE_ORIGINAL_RESOLUTION,
-		PERFORMANCE_MODE_MAX_RESOLUTION,
-		PERFORMANCE_MODE_DOWNSCALE_RESOLUTION
+		PERFORMANCE_MODE_ORIGINAL_SIZE,
+		PERFORMANCE_MODE_MAX_SIZE,
+		PERFORMANCE_MODE_DOWNSCALE_SIZE
 	};
 
 	enum Format : int32_t {
@@ -255,7 +255,7 @@ protected:
 	static void _bind_methods();
 
 private:
-	PerformanceMode performance_mode = PERFORMANCE_MODE_ORIGINAL_RESOLUTION;
+	PerformanceMode performance_mode = PERFORMANCE_MODE_ORIGINAL_SIZE;
 	Format format = FORMAT_L8;
 	Vector<uint8_t> data;
 	int width = 0;
