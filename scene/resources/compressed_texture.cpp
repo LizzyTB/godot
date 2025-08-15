@@ -86,11 +86,11 @@ Error CompressedTexture2D::_load_data(const String &p_path, int &r_width, int &r
 		return ERR_CANT_OPEN;
 	}
 
-	if (!(df & FORMAT_BIT_KEEP_ORIGINAL_QUALITY)) {
-		Image::Quality desired_quality = GLOBAL_GET("rendering/textures/quality/default_quality_mode");
+	if (!(df & FORMAT_BIT_FORCE_ORIGINAL_RESOLUTION)) {
+		Image::PerformanceMode performance_mode = GLOBAL_GET("rendering/textures/performance/default_mode");
 
-		if (desired_quality != Image::QUALITY_ORIGINAL) {
-			image->set_quality(desired_quality);
+		if (performance_mode != Image::PERFORMANCE_MODE_ORIGINAL_RESOLUTION) {
+			image->set_performance_mode(performance_mode);
 		}
 	}
 

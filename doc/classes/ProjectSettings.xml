@@ -3350,6 +3350,17 @@
 		<member name="rendering/textures/lossless_compression/force_png" type="bool" setter="" getter="" default="false">
 			If [code]true[/code], the texture importer will import lossless textures using the PNG format. Otherwise, it will default to using WebP.
 		</member>
+		<member name="rendering/textures/performance/default_mode" type="int" setter="" getter="" default="0">
+			The default [member Image.PerformanceMode] of imported [Texture2D]'s. In the [b]Original Resolution[/b], the [Texture2D] resolution is unaffected.
+			[b]Max Resolution[/b] will ensure the [Texture2D]'s width and height are below [member rendering/textures/performance/max_resolution]. The equation is [code]size = min(max_resolution, original_size)[/code].
+			[b]Downscale Resolution[/b] will half the [Texture2D]'s width and height [member rendering/textures/performance/downscale_factor] times. The equation is [code]code = floor(original_size / pow(2, downscale_factor))[/code].
+		</member>
+		<member name="rendering/textures/performance/downscale_factor" type="int" setter="" getter="" default="1">
+			If the performance mode is set to [code]Downscale Factor[/code], then this will be used to determin how many times each [Texture2D]'s width and height get's halved.
+		</member>
+		<member name="rendering/textures/performance/max_resolution" type="Vector2i" setter="" getter="" default="Vector2i(2048, 2048)">
+			If the performance mode is set to [code]Max Resolution[/code], then this will be used to determin how big each [Texture2D]'s width and height can be.
+		</member>
 		<member name="rendering/textures/vram_compression/cache_gpu_compressor" type="bool" setter="" getter="" default="true">
 			If [code]true[/code], the GPU texture compressor will cache the local RenderingDevice and its resources (shaders and pipelines), allowing for faster subsequent imports at a memory cost.
 		</member>
