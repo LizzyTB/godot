@@ -777,31 +777,30 @@ void Image::convert(Format p_new_format) {
 	_copy_internals_from(new_img);
 }
 
-Image::Quality Image::get_quality() const {
-	return quality;
+Image::PerformanceMode Image::get_performance_mode() const {
+	return performance_mode;
 }
 
-void Image::set_quality(Quality p_quality) {
-	switch (quality) {
-		case QUALITY_ORIGINAL:
+void Image::set_performance_mode(PerformanceMode p_performance_mode) {
+	switch (performance_mode) {
+		case PERFORMANCE_MODE_ORIGINAL_RESOLUTION:
 			break;
 
 		default:
-			ERR_PRINT(vformat("Cannot change image quality. Reload the image in the original quality or reset the data first. Current quality is '%s'", quality));
-			return;
+			ERR_FAIL_MSG("Image's performance_mode has already been set. It needs to be reloaded/recreated before it can be set again");
 	}
 
-	quality = p_quality;
+	performance_mode = p_performance_mode;
 
 	auto size = get_size();
 	Vector2i desired_size = size;
 
-	switch (quality) {
-		case QUALITY_ORIGINAL:
+	switch (performance_mode) {
+		case PERFORMANCE_MODE_ORIGINAL_RESOLUTION:
 			break;
 
-		case QUALITY_MAX_SIZE: {
-			Vector2i max_size = GLOBAL_GET("rendering/textures/quality/max_size");
+		case PERFORMANCE_MODE_MAX_RESOLUTION: {
+			Vector2i max_size = GLOBAL_GET("rendering/textures/performance/max_resolution");
 
 			if (desired_size.x > max_size.x) {
 				desired_size.x = max_size.x;
@@ -814,8 +813,8 @@ void Image::set_quality(Quality p_quality) {
 			break;
 		}
 
-		case QUALITY_DOWNSCALE_FACTOR: {
-			int factor = GLOBAL_GET("rendering/textures/quality/downscale_factor");
+		case PERFORMANCE_MODE_DOWNSCALE_RESOLUTION: {
+			int factor = GLOBAL_GET("rendering/textures/performance/downscale_factor");
 			factor = CLAMP(factor, 1, 14);
 
 			desired_size.x >>= factor;
@@ -825,7 +824,7 @@ void Image::set_quality(Quality p_quality) {
 		}
 
 		default:
-			ERR_FAIL_MSG(vformat("Unknown texture quality mode '%i'", quality));
+			ERR_FAIL_MSG(vformat("Unknown image performance mode '%i'", performance_mode));
 	}
 
 	desired_size = desired_size.max(Vector2i(1, 1));
@@ -1542,6 +1541,7 @@ void Image::resize(int p_width, int p_height, Interpolation p_interpolation) {
 	}
 
 	_copy_internals_from(dst);
+	performance_mode = PERFORMANCE_MODE_ORIGINAL_RESOLUTION;
 }
 
 void Image::crop_from_point(int p_x, int p_y, int p_width, int p_height) {
@@ -2357,7 +2357,7 @@ void Image::initialize_data(int p_width, int p_height, bool p_use_mipmaps, Forma
 
 	mipmaps = p_use_mipmaps;
 
-	quality = QUALITY_ORIGINAL;
+	performance_mode = PERFORMANCE_MODE_ORIGINAL_RESOLUTION;
 }
 
 void Image::initialize_data(const char **p_xpm) {
@@ -2367,7 +2367,7 @@ void Image::initialize_data(const char **p_xpm) {
 	mipmaps = false;
 	bool has_alpha = false;
 
-	quality = QUALITY_ORIGINAL;
+	performance_mode = PERFORMANCE_MODE_ORIGINAL_RESOLUTION;
 
 	enum Status {
 		READING_HEADER,
@@ -3657,9 +3657,12 @@ void Image::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_width"), &Image::get_width);
 	ClassDB::bind_method(D_METHOD("get_height"), &Image::get_height);
 	ClassDB::bind_method(D_METHOD("get_size"), &Image::get_size);
+	ClassDB::bind_method(D_METHOD("get_original_width"), &Image::get_original_width);
+	ClassDB::bind_method(D_METHOD("get_original_height"), &Image::get_original_height);
+	ClassDB::bind_method(D_METHOD("get_original_size"), &Image::get_original_size);
 	ClassDB::bind_method(D_METHOD("has_mipmaps"), &Image::has_mipmaps);
-	ClassDB::bind_method(D_METHOD("get_quality"), &Image::get_quality);
-	ClassDB::bind_method(D_METHOD("set_quality", "quality"), &Image::set_quality);
+	ClassDB::bind_method(D_METHOD("get_performance_mode"), &Image::get_performance_mode);
+	ClassDB::bind_method(D_METHOD("set_performance_mode", "performance_mode"), &Image::set_performance_mode);
 	ClassDB::bind_method(D_METHOD("get_format"), &Image::get_format);
 	ClassDB::bind_method(D_METHOD("get_data"), &Image::get_data);
 	ClassDB::bind_method(D_METHOD("get_data_size"), &Image::get_data_size);
@@ -3762,9 +3765,9 @@ void Image::_bind_methods() {
 	BIND_CONSTANT(MAX_WIDTH);
 	BIND_CONSTANT(MAX_HEIGHT);
 
-	BIND_ENUM_CONSTANT(QUALITY_ORIGINAL);
-	BIND_ENUM_CONSTANT(QUALITY_MAX_SIZE);
-	BIND_ENUM_CONSTANT(QUALITY_DOWNSCALE_FACTOR);
+	BIND_ENUM_CONSTANT(PERFORMANCE_MODE_ORIGINAL_RESOLUTION);
+	BIND_ENUM_CONSTANT(PERFORMANCE_MODE_MAX_RESOLUTION);
+	BIND_ENUM_CONSTANT(PERFORMANCE_MODE_DOWNSCALE_RESOLUTION);
 	BIND_ENUM_CONSTANT(FORMAT_L8);
 	BIND_ENUM_CONSTANT(FORMAT_LA8);
 	BIND_ENUM_CONSTANT(FORMAT_R8);
